@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory — сборка маркера</title>
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#f3f3f1;color:#000;font:15px/1.5 "IBM Plex Sans","Helvetica Neue",Arial,sans-serif}
+  main{max-width:46rem;margin:0 auto;padding:28px 20px 60px}
+  h1{font:700 2.2rem/1 inherit;letter-spacing:-.04em;margin:0 0 .6rem}
+  p{margin:.4rem 0 1rem;max-width:62ch}
+  .row{display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;align-items:center;margin:1rem 0}
+  label{display:flex;gap:.45rem;align-items:center}
+  button,.file{font:600 15px inherit;border:0;border-radius:10px;padding:.8rem 1.1rem;cursor:pointer;background:#1c1c1c;color:#fff}
+  button.ghost{background:none;color:#000;border:1px solid #000}
+  button[disabled]{opacity:.45;cursor:default}
+  input[type=file]{font:inherit}
+  canvas{display:block;max-width:100%;height:auto;background:#ddd;margin-top:1rem}
+  .bar{height:6px;background:#e2e2de;border-radius:3px;overflow:hidden;margin-top:1rem}
+  .bar i{display:block;height:100%;width:0;background:#000;transition:width .2s}
+  .status{font-weight:600;margin-top:.8rem}
+  .warn{color:#a40000}
+  code{background:#fff;padding:.1rem .35rem;border-radius:4px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Сборка маркера</h1>
+  <p>Выберите фото поверхности с осколками, снятое строго сверху. Лучше заранее обрезать его по краям чёрного квадрата. Инструмент создаст <code>marker.mind</code> и <code>marker.jpg</code>: положите оба файла в папку <code>content/</code> с заменой.</p>
+
+  <div class="row">
+    <input type="file" id="file" accept="image/*">
+  </div>
+  <div class="row">
+    <label><input type="checkbox" id="square" checked> Обрезать до квадрата по центру</label>
+    <label><input type="checkbox" id="contrast" checked> Усилить контраст</label>
+    <label><input type="checkbox" id="gray" checked> Чёрно-белое</label>
+  </div>
+  <div class="row">
+    <button id="build" disabled>Собрать маркер</button>
+    <button id="dlMind" class="ghost" disabled>Скачать marker.mind</button>
+    <button id="dlJpg" class="ghost" disabled>Скачать marker.jpg</button>
+  </div>
+
+  <div class="bar"><i id="bar"></i></div>
+  <p class="status" id="status">Фото не выбрано.</p>
+  <canvas id="view" width="10" height="10"></canvas>
+  <p>Точки на изображении — детали, по которым телефон узнаёт маркер. Чем их больше и чем равномернее они распределены, тем стабильнее AR. Если точек мало, переснимите при ровном свете без бликов.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const MAX = 1024;
+let prepared = null, mindBlob = null, jpgBlob = null;
+
+function prepare(img){
+  let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+  if ($('square').checked){ const s = Math.min(sw, sh); sx = (sw - s) / 2; sy = (sh - s) / 2; sw = sh = s; }
+  const k = Math.min(1, MAX / Math.max(sw, sh));
+  const c = document.createElement('canvas');
+  c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+  const g = c.getContext('2d');
+  g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  const d = g.getImageData(0, 0, c.width, c.height), px = d.data;
+  if ($('gray').checked) for (let i = 0; i < px.length; i += 4){ const v = .299*px[i] + .587*px[i+1] + .114*px[i+2]; px[i] = px[i+1] = px[i+2] = v; }
+  if ($('contrast').checked){
+    const hist = new Array(256).fill(0);
+    for (let i = 0; i < px.length; i += 4) hist[Math.round((px[i]+px[i+1]+px[i+2])/3)]++;
+    const n = px.length / 4; let lo = 0, hi = 255, acc = 0;
+    for (; lo < 255; lo++){ acc += hist[lo]; if (acc > n * .01) break; }
+    acc = 0; for (; hi > 0; hi--){ acc += hist[hi]; if (acc > n * .01) break; }
+    const s = 255 / Math.max(1, hi - lo);
+    for (let i = 0; i < px.length; i += 4) for (let j = 0; j < 3; j++) px[i+j] = Math.max(0, Math.min(255, (px[i+j] - lo) * s));
+  }
+  g.putImageData(d, 0, 0);
+  return c;
+}
+
+function show(c, points){
+  const v = $('view'); v.width = c.width; v.height = c.height;
+  const g = v.getContext('2d'); g.drawImage(c, 0, 0);
+  if (!points) return;
+  g.fillStyle = '#ff2d2d';
+  points.forEach(p => { g.beginPath(); g.arc(p.x, p.y, Math.max(2, c.width / 300), 0, 7); g.fill(); });
+}
+
+let srcImg = null;
+function refresh(){
+  if (!srcImg) return;
+  prepared = prepare(srcImg);
+  show(prepared);
+  $('build').disabled = false; $('dlMind').disabled = $('dlJpg').disabled = true;
+  $('status').textContent = `Готово к сборке: ${prepared.width}×${prepared.height} px.`;
+  $('status').className = 'status'; $('bar').style.width = '0';
+}
+$('file').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image();
+  img.onload = () => { srcImg = img; refresh(); };
+  img.src = URL.createObjectURL(f);
+});
+['square','contrast','gray'].forEach(id => $(id).addEventListener('change', refresh));
+
+$('build').addEventListener('click', async () => {
+  $('build').disabled = true;
+  $('status').textContent = 'Сборка… обычно 20–60 секунд.';
+  const img = new Image();
+  img.src = prepared.toDataURL('image/png');
+  await img.decode();
+  try{
+    const compiler = new window.MINDAR.IMAGE.Compiler();
+    const data = await compiler.compileImageTargets([img], p => { $('bar').style.width = p.toFixed(0) + '%'; });
+    const buf = await compiler.exportData();
+    mindBlob = new Blob([buf]);
+    jpgBlob = await new Promise(r => prepared.toBlob(r, 'image/jpeg', .92));
+
+    // feature points (all scales, mapped to image pixels)
+    const pts = [];
+    (data[0].matchingData || []).forEach(level => {
+      const k = prepared.width / level.width;
+      [...(level.maximaPoints||[]), ...(level.minimaPoints||[])].forEach(p => pts.push({x: p.x * k, y: p.y * k}));
+    });
+    show(prepared, pts);
+    const few = pts.length < 150;
+    $('status').textContent = `Готово. Найдено ${pts.length} опорных точек.` + (few ? ' Это мало — маркер может распознаваться плохо.' : '');
+    $('status').className = 'status' + (few ? ' warn' : '');
+    $('dlMind').disabled = $('dlJpg').disabled = false;
+  }catch(e){
+    console.error(e);
+    $('status').textContent = 'Сборка не удалась: ' + e.message;
+    $('status').className = 'status warn';
+  }
+  $('build').disabled = false;
+});
+
+function download(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+$('dlMind').addEventListener('click', () => download(mindBlob, 'marker.mind'));
+$('dlJpg').addEventListener('click', () => download(jpgBlob, 'marker.jpg'));
+</script>
+</body>
+</html>

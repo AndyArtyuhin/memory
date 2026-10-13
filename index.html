@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f3f1">
+<title>Memory — Andy Artyuhin</title>
+<meta name="description" content="Memory, Andy Artyuhin. Une sphère brisée et son double en réalité augmentée. / A broken sphere and its double in augmented reality.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+/* pick the language before the page is drawn, so there is no flash of the wrong one */
+window.MEMORY_DEVICE_LANG = function () {
+  try { var s = sessionStorage.getItem('lang'); if (s === 'fr' || s === 'en') return s; } catch (e) {}
+  var list = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || navigator.userLanguage || ''];
+  for (var i = 0; i < list.length; i++) {
+    var code = String(list[i]).toLowerCase().slice(0, 2);
+    if (code === 'fr' || code === 'en') return code;
+  }
+  return 'en';
+};
+document.documentElement.lang = window.MEMORY_DEVICE_LANG();
+</script>
+<link rel="stylesheet" href="css/style.css">
+
+<!-- 1. settings (marker, model, placement) -->
+<script src="config.js"></script>
+<!-- 2. libraries -->
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+</head>
+<body>
+
+<!-- AR scene is built here from config.js -->
+<div id="ar"></div>
+
+<div id="hud" aria-live="polite">
+  <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <p class="hint"><span lang="fr" data-hint="fr"></span><span lang="en" data-hint="en"></span></p>
+  <button class="close" id="close" aria-label="Fermer / Close">×</button>
+</div>
+
+<main id="intro">
+  <div class="wrap">
+    <div class="top">
+      <a class="mark" href="https://andyartyuhin.com" target="_blank" rel="noopener" aria-label="Andy Artyuhin — andyartyuhin.com">AA.</a>
+      <div class="lang" role="group" aria-label="Langue / Language">
+        <button type="button" data-set="fr" aria-pressed="true">FR</button>
+        <button type="button" data-set="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+
+    <div class="hero" id="hero">
+      <div class="floor" aria-hidden="true"></div>
+      <div class="ph" aria-hidden="true"></div>
+      <canvas id="ball3d" tabindex="0" role="img" aria-label="Sphère en 3D / 3D sphere"></canvas>
+    </div>
+
+    <h1>MEMORY</h1>
+
+    <p class="about" lang="fr">Où se trouve notre passé, et combien de nos souvenirs sont réels&nbsp;? Memory réunit deux sculptures&nbsp;: une sphère en plâtre brisée et son double intact, recréé en réalité augmentée. Les éclats servent de repère&nbsp;: filmez-les avec votre téléphone et la sphère réapparaît à l’écran telle qu’elle était, une image qui n’existe plus dans le monde réel. L’œuvre invite à comparer le passé et le présent, à «&nbsp;toucher&nbsp;» l’irréel, et laisse une question ouverte&nbsp;: est-ce vraiment ainsi que c’était&nbsp;?</p>
+    <p class="about" lang="en">Where is our past, and how many of our memories are real? Memory brings together two sculptures: a broken plaster sphere and its intact double, recreated in augmented reality. The shards act as a marker: point your phone at them and the sphere reappears on screen as it once was, an image that no longer exists in the real world. The work invites you to compare past and present, to “touch” the unreal, and leaves one question open: is that really how it was?</p>
+
+    <h2><span lang="fr">Voir l’objet</span><span lang="en">See the object</span></h2>
+    <ol>
+      <li><span lang="fr">Appuyez sur «&nbsp;Ouvrir la caméra&nbsp;» ci-dessous, puis autorisez l’accès à la caméra quand le navigateur le demande.</span><span lang="en">Tap “Open camera” below, then allow access to the camera when your browser asks for permission.</span></li>
+      <li><span lang="fr">Placez-vous au-dessus du socle et tenez le téléphone de façon à cadrer tout le carré noir avec les éclats.</span><span lang="en">Stand above the plinth and hold your phone so the whole black square with the shards fits in the frame.</span></li>
+      <li><span lang="fr">Restez immobile un instant. La sphère apparaît au-dessus des éclats et reste en place quand vous bougez.</span><span lang="en">Hold still for a moment. The sphere appears above the shards and stays in place as you move around.</span></li>
+    </ol>
+
+
+    <div class="notice" id="notice" hidden>
+      <p class="n-inapp" hidden>
+        <span lang="fr">Ce navigateur intégré (Instagram, Facebook…) ne donne pas accès à la caméra. Ouvrez la page dans Safari ou Chrome&nbsp;: menu <b>⋯</b> puis «&nbsp;Ouvrir dans le navigateur&nbsp;».</span>
+        <span lang="en">This in-app browser (Instagram, Facebook…) can’t use the camera. Open the page in Safari or Chrome: tap <b>⋯</b>, then “Open in browser”.</span>
+      </p>
+      <p class="n-file" hidden>
+        <span lang="fr">La page est ouverte comme fichier local. Publiez le dossier sur un serveur https (voir README).</span>
+        <span lang="en">The page is opened as a local file. Publish the folder on an https server (see README).</span>
+      </p>
+      <button type="button" class="link" id="copy" hidden><span lang="fr">Copier le lien</span><span lang="en">Copy link</span></button>
+    </div>
+
+    <div class="cta">
+      <button class="btn" id="start" type="button">
+        <span class="lbl-idle"><span lang="fr">Ouvrir la caméra</span><span lang="en">Open camera</span></span>
+        <span class="lbl-busy" hidden><span lang="fr">Ouverture de la caméra…</span><span lang="en">Opening camera…</span></span>
+      </button>
+      <div class="err" id="err" role="alert">
+        <p class="m-denied" hidden>
+          <span lang="fr">L’accès à la caméra est bloqué. iPhone&nbsp;: touchez «&nbsp;aA&nbsp;» dans la barre d’adresse, puis Réglages du site web → Caméra → Autoriser. Android&nbsp;: touchez l’icône à gauche de l’adresse → Autorisations → Caméra. Rechargez ensuite la page.</span>
+          <span lang="en">Camera access is blocked. iPhone: tap “aA” in the address bar, then Website Settings → Camera → Allow. Android: tap the icon left of the address → Permissions → Camera. Then reload the page.</span>
+        </p>
+        <p class="m-nocam" hidden>
+          <span lang="fr">Aucune caméra arrière n’a été trouvée sur cet appareil.</span>
+          <span lang="en">No rear camera was found on this device.</span>
+        </p>
+        <p class="m-busy" hidden>
+          <span lang="fr">La caméra est utilisée par une autre application. Fermez-la, puis réessayez.</span>
+          <span lang="en">The camera is being used by another app. Close it, then try again.</span>
+        </p>
+        <p class="m-insecure" hidden>
+          <span lang="fr">La caméra n’est pas disponible ici. Ouvrez cette page en https dans Safari ou Chrome.</span>
+          <span lang="en">The camera isn’t available here. Open this page over https in Safari or Chrome.</span>
+        </p>
+        <p class="m-load" hidden>
+          <span lang="fr">Le chargement a échoué. Vérifiez votre connexion et réessayez.</span>
+          <span lang="en">Loading failed. Check your connection and try again.</span>
+        </p>
+        <button type="button" onclick="location.reload()"><span lang="fr">Recharger la page</span><span lang="en">Reload page</span></button>
+      </div>
+    </div>
+
+    <footer class="credit">
+      <p class="name">Andy Artyuhin</p>
+      <nav aria-label="Liens / Links">
+        <a href="https://andyartyuhin.com" target="_blank" rel="noopener">andyartyuhin.com</a>
+        <a href="https://www.instagram.com/andy_artyuhin/" target="_blank" rel="noopener">Instagram</a>
+      </nav>
+    </footer>
+    <div class="legal">
+      <div lang="fr">
+        <p>Fonctionne au mieux dans Safari (iPhone) et Chrome (Android), avec une bonne lumière et sans reflets sur le carré noir.</p>
+        <p>L’image de la caméra est analysée uniquement sur votre téléphone&nbsp;; elle n’est jamais enregistrée ni transmise. Pas de compte, pas de cookies, pas de mesure d’audience. Les polices et le code sont chargés depuis Google Fonts et jsDelivr, qui, comme pour tout site, voient votre adresse IP.</p>
+        <p>Memory est un projet artistique non commercial. © 2026 Andy Artyuhin, tous droits réservés. Réalisé avec A-Frame, MindAR et three.js (MIT), police IBM Plex Sans (OFL).</p>
+      </div>
+      <div lang="en">
+        <p>Works best in Safari (iPhone) and Chrome (Android), in good light and without glare on the black square.</p>
+        <p>The camera image is processed only on your phone; it is never recorded or sent anywhere. No accounts, no cookies, no analytics. Fonts and code are loaded from Google Fonts and jsDelivr, which, as with any website, see your IP address.</p>
+        <p>Memory is a non-commercial art project. © 2026 Andy Artyuhin, all rights reserved. Built with A-Frame, MindAR and three.js (MIT), typeface IBM Plex Sans (OFL).</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 3. app -->
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+/* Memory — styles */
+:root{
+  --wall:#f3f3f1;      /* gallery wall */
+  --ink:#000;          /* the marker lines on the ball */
+  --graphite:#6f6f6b;  /* secondary text */
+  --plaster:#e2e2de;   /* hairlines, inactive */
+  --plinth:#1c1c1c;    /* button = black plinth top */
+  --sans:"IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--wall);color:var(--ink);font-family:var(--sans);-webkit-text-size-adjust:100%}
+body{overflow:hidden}
+
+/* language switching: only the active language is shown */
+html[lang="fr"] [lang="en"]:not(html), html[lang="en"] [lang="fr"]:not(html){display:none !important}
+
+/* AR layer sits underneath the intro */
+#ar{position:fixed;inset:0;background:#000}
+#ar a-scene{width:100%;height:100%}
+
+/* intro */
+#intro{
+  position:fixed;inset:0;z-index:20;overflow-y:auto;overflow-x:hidden;background:var(--wall);
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 24px calc(env(safe-area-inset-bottom,0px) + 28px);
+  transition:opacity .5s ease, visibility .5s;
+}
+#intro.gone{opacity:0;visibility:hidden}
+.wrap{max-width:32rem;margin:0 auto;min-height:100%;display:flex;flex-direction:column;container-type:inline-size}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.mark{font:700 .875rem/1 var(--sans);letter-spacing:.06em;color:var(--ink);text-decoration:none;padding:.6rem 0;-webkit-tap-highlight-color:transparent}
+.mark:hover{text-decoration:underline;text-underline-offset:.25em;text-decoration-thickness:1px}
+.mark:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+/* language switch as quiet text, not a button: active language in ink, the other one greyed */
+.lang{display:flex;align-items:baseline;margin-right:-.35rem}
+.lang button{
+  font:500 .875rem/1 var(--sans);letter-spacing:.06em;border:0;background:none;color:var(--graphite);
+  padding:.6rem .35rem;cursor:pointer;-webkit-tap-highlight-color:transparent
+}
+.lang button + button::before{content:"/";color:#b9b9b4;margin-right:.7rem;font-weight:400}
+.lang button[aria-pressed="true"]{color:var(--ink);font-weight:600}
+.lang button[aria-pressed="false"]:hover{color:var(--ink)}
+
+.hero{position:relative;margin:2vh auto 1.4rem;width:min(78vw,300px);aspect-ratio:1}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;opacity:0;transition:opacity .8s ease}
+.hero canvas.ready{opacity:1}
+.hero canvas:active{cursor:grabbing}
+.hero canvas:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:50%}
+.hero .ph{position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle at 38% 32%,#fff 40%,#d9d9d5 100%);transition:opacity .6s}
+.hero.loaded .ph{opacity:0}
+.hero .floor{position:absolute;left:18%;right:18%;bottom:2%;height:7%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.18),rgba(0,0,0,0));pointer-events:none}
+
+
+/* the title is stretched to the exact width of the text column by js/app.js (fitTitle);
+   the cqi value is only a close first guess so nothing jumps before the script runs */
+h1{
+  font:700 24.5cqi/.9 var(--sans);letter-spacing:-.045em;white-space:nowrap;
+  margin:0 0 1.4rem;
+}
+.about{font-size:1.0625rem;line-height:1.6;color:#1a1a1a;text-align:justify;text-justify:inter-word;-webkit-hyphens:auto;hyphens:auto}
+.about em{font-style:normal;font-weight:600}
+
+h2{font:600 1rem/1.3 var(--sans);text-transform:uppercase;letter-spacing:.03em;margin:2.6rem 0 .4rem}
+ol{list-style:none;padding:0;margin:0 0 1.6rem;counter-reset:s}
+ol li{counter-increment:s;display:grid;grid-template-columns:1.5rem 1fr;gap:0;padding:.45rem 0;font-size:.97rem;line-height:1.5;text-align:justify;text-justify:inter-word;-webkit-hyphens:auto;hyphens:auto}
+ol li::before{content:counter(s) ".";font:700 1rem/1.5 var(--sans);color:var(--ink)}
+.legal{margin-top:1.6rem;font-size:.8rem;line-height:1.55;color:var(--graphite);text-align:justify;text-justify:inter-word;-webkit-hyphens:auto;hyphens:auto}
+.legal p + p{margin-top:.65rem}
+
+
+/* sticky button over an iOS 26-style progressive blur: the glass layer runs edge to edge
+   under the button and fades out upwards, so text scrolling beneath it softens instead of being cut */
+.cta{position:sticky;bottom:0;margin-top:auto;padding:1.6rem 0 .2rem;isolation:isolate}
+.cta::before{
+  content:"";position:absolute;z-index:-1;
+  left:50%;width:100vw;transform:translateX(-50%);
+  top:-1.4rem;bottom:calc(-28px - env(safe-area-inset-bottom,0px));
+  background:rgba(243,243,241,.55);
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 45%);mask-image:linear-gradient(to bottom, transparent 0, #000 45%);
+  pointer-events:none;
+}
+.btn{
+  display:block;width:100%;border:0;cursor:pointer;
+  background:var(--plinth);color:#fff;font:400 1.0625rem/1 var(--sans);
+  padding:1.15rem 1.4rem;border-radius:999px;
+  transition:transform .15s ease, opacity .2s;
+}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.6;cursor:progress}
+.btn:focus-visible,.lang button:focus-visible,.close:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.credit{margin-top:1.8rem;padding-top:1.2rem;border-top:1px solid var(--plaster);display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.6rem 1.2rem}
+.credit .name{font:700 1rem/1.2 var(--sans)}
+.credit .name small{display:block;font:400 .8rem/1.4 var(--sans);letter-spacing:0;color:var(--graphite)}
+.credit nav{display:flex;gap:1.1rem}
+.credit a{color:var(--ink);font:600 1rem/1.2 var(--sans);text-decoration:underline;text-underline-offset:.22em;text-decoration-thickness:1px;padding:.5rem 0}
+.credit a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.err{display:none;margin-top:1rem;padding:1rem;border-left:3px solid var(--ink);background:#fff;font-size:.92rem;line-height:1.5}
+.err.show{display:block}
+.err button{margin-top:.7rem;font:600 .9rem var(--sans);background:none;border:1px solid var(--ink);border-radius:999px;padding:.55rem 1rem;cursor:pointer}
+
+/* in-AR overlay */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none;display:none}
+#hud.on{display:block}
+.frame{
+  position:absolute;left:50%;top:50%;width:min(72vw,62vh);aspect-ratio:1;transform:translate(-50%,-50%);
+  transition:opacity .4s ease
+}
+.frame i{position:absolute;width:26px;height:26px;border:3px solid #fff;filter:drop-shadow(0 0 3px rgba(0,0,0,.45))}
+.frame i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}
+.frame i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0}
+.frame i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0}
+.frame i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0}
+.hint{
+  position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);transform:translateX(-50%);
+  background:rgba(255,255,255,.92);color:#000;font:600 .95rem/1.3 var(--sans);
+  padding:.75rem 1.1rem;border-radius:999px;white-space:nowrap;transition:opacity .4s ease
+}
+#hud.found .frame,#hud.found .hint{opacity:0}
+.close{
+  position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;pointer-events:auto;
+  width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:#000;
+  font:400 1.6rem/1 var(--sans);cursor:pointer
+}
+
+.notice{margin:0 0 1.2rem;padding:1rem 1.1rem;background:#fff;border-radius:12px;font-size:.92rem;line-height:1.5;display:flex;flex-direction:column;align-items:flex-start;gap:.7rem}
+.notice[hidden],.notice [hidden]{display:none}
+.notice p{margin:0}
+.link{font:600 .9rem var(--sans);background:none;border:1px solid var(--ink);border-radius:999px;padding:.55rem 1rem;cursor:pointer;color:var(--ink)}
