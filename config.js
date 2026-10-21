@@ -20,11 +20,12 @@ window.MEMORY_CONFIG = {
     file: 'content/model.glb',
 
     // Size of the object's largest dimension, relative to the marker width.
-    // 0.38 = a little over a third of the black square.
-    size: 0.38,
+    // 0.46 ≈ the size of the broken sphere in the marker photo.
+    size: 0.46,
 
     // Where the object's centre floats, relative to the centre of the marker.
-    position: { x: 0.04, y: 0, z: 0.56 },
+    // Centred over the broken sphere in the current photo; z = height above the plinth.
+    position: { x: -0.035, y: 0.065, z: 0.55 },
 
     // Extra rotation in degrees, if the object needs to face another way in AR.
     rotation: { x: 0, y: 0, z: 0 },

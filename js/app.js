@@ -145,6 +145,7 @@
   function showError(kind) {
     busy(false);
     intro.classList.remove('gone');
+    document.body.classList.remove('ar-on');
     hud.classList.remove('on');
     err.querySelectorAll('p').forEach(el => el.hidden = !el.classList.contains('m-' + kind));
     err.classList.add('show');
@@ -193,7 +194,7 @@
     if (sceneEl.hasLoaded) run(); else sceneEl.addEventListener('loaded', run, { once: true });
   });
 
-  sceneEl.addEventListener('arReady', () => { clearTimeout(readyTimer); busy(false); intro.classList.add('gone'); hud.classList.add('on'); });
+  sceneEl.addEventListener('arReady', () => { clearTimeout(readyTimer); busy(false); intro.classList.add('gone'); document.body.classList.add('ar-on'); hud.classList.add('on'); window.scrollTo(0, 0); });
   sceneEl.addEventListener('arError', () => { clearTimeout(readyTimer); started = false; showError('denied'); });
 
   let lostAt = 0, shown = false;
@@ -212,6 +213,7 @@
     const sys = sceneEl.systems['mindar-image-system'];
     if (sys && started) { sys.stop(); started = false; }
     hud.classList.remove('on', 'found');
+    document.body.classList.remove('ar-on');
     intro.classList.remove('gone');
     shown = false;
   });

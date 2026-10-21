@@ -8,23 +8,24 @@
   --sans:"IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
 }
 *{box-sizing:border-box;margin:0}
-html,body{height:100%;background:var(--wall);color:var(--ink);font-family:var(--sans);-webkit-text-size-adjust:100%}
-body{overflow:hidden}
+html,body{background:var(--wall);color:var(--ink);font-family:var(--sans);-webkit-text-size-adjust:100%}
+/* the page scrolls as a normal document, so mobile Safari (iOS 26) can show content through its glass toolbar */
+body.ar-on{overflow:hidden}
 
 /* language switching: only the active language is shown */
 html[lang="fr"] [lang="en"]:not(html), html[lang="en"] [lang="fr"]:not(html){display:none !important}
 
-/* AR layer sits underneath the intro */
-#ar{position:fixed;inset:0;background:#000}
+/* AR layer: full screen, invisible until the camera is running */
+#ar{position:fixed;inset:0;background:#000;visibility:hidden;z-index:5}
+body.ar-on #ar{visibility:visible}
 #ar a-scene{width:100%;height:100%}
 
 /* intro */
 #intro{
-  position:fixed;inset:0;z-index:20;overflow-y:auto;overflow-x:hidden;background:var(--wall);
+  position:relative;min-height:100vh;min-height:100svh;overflow-x:clip;background:var(--wall);
   padding:calc(env(safe-area-inset-top,0px) + 20px) 24px calc(env(safe-area-inset-bottom,0px) + 28px);
-  transition:opacity .5s ease, visibility .5s;
 }
-#intro.gone{opacity:0;visibility:hidden}
+#intro.gone{display:none}
 .wrap{max-width:32rem;margin:0 auto;min-height:100%;display:flex;flex-direction:column;container-type:inline-size}
 .top{display:flex;justify-content:space-between;align-items:baseline}
 .mark{font:700 .875rem/1 var(--sans);letter-spacing:.06em;color:var(--ink);text-decoration:none;padding:.6rem 0;-webkit-tap-highlight-color:transparent}
@@ -69,14 +70,13 @@ ol li::before{content:counter(s) ".";font:700 1rem/1.5 var(--sans);color:var(--i
 
 /* sticky button over an iOS 26-style progressive blur: the glass layer runs edge to edge
    under the button and fades out upwards, so text scrolling beneath it softens instead of being cut */
-.cta{position:sticky;bottom:0;margin-top:auto;padding:1.6rem 0 .2rem;isolation:isolate}
+.cta{position:sticky;bottom:0;margin-top:auto;padding:1.6rem 0 calc(14px + env(safe-area-inset-bottom,0px));isolation:isolate}
 .cta::before{
   content:"";position:absolute;z-index:-1;
   left:50%;width:100vw;transform:translateX(-50%);
-  top:-1.4rem;bottom:calc(-28px - env(safe-area-inset-bottom,0px));
-  background:rgba(243,243,241,.55);
-  -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
-  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 45%);mask-image:linear-gradient(to bottom, transparent 0, #000 45%);
+  top:-1.4rem;bottom:0;
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 55%);mask-image:linear-gradient(to bottom, transparent 0, #000 55%);
   pointer-events:none;
 }
 .btn{
